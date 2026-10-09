@@ -1,0 +1,20 @@
+{
+  "name": "consumo",
+  "version": "0.2.0",
+  "description": "Panel lateral de consumo: tokens del último pedido, gasto de la sesión, contexto, herramientas y tiempo",
+  "author": { "name": "Antonio" },
+  "userConfig": {
+    "marca": {
+      "type": "string",
+      "title": "Marca",
+      "description": "Nombre que encabeza el panel",
+      "default": "Alantia"
+    },
+    "acento": {
+      "type": "string",
+      "title": "Color de acento",
+      "description": "Color de la marca y los realces, en hex (#D97757) o nombre de color del tema",
+      "default": "#D97757"
+    }
+  }
+}

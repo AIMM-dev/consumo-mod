@@ -1,0 +1,6 @@
+{
+  "name": "alantia",
+  "description": "Mods de Alantia para Claude Code",
+  "owner": { "name": "Antonio" },
+  "plugins": [{ "name": "consumo", "source": "./" }]
+}
