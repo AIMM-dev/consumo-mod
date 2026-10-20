@@ -93,6 +93,26 @@ async function refresh($) {
   $.ui.invalidate('ui.render')
 }
 
+
+// Resumen en texto para pantallas que no acomodan el panel lateral
+function summary(T) {
+  const ctx = usage?.context
+  const tokens = ctx?.tokens ?? 0
+  const win = ctx?.window ?? 0
+  const pct = ctx?.percent ?? (win ? Math.min(100, Math.round((tokens / win) * 100)) : 0)
+  const cost = usage?.cost
+  const startedAt = usage?.startedAt ?? loadedAt
+  return [
+    '▲ ALANTIA · ' + T.subtitle,
+    T.newTokens + ' (' + T.lastRequest + '): ' + fmtTokens(last.fresh + last.output) +
+      '  ·  ' + T.spend + ' (' + T.session + '): ' + (cost ? '$' + cost.usd.toFixed(2) : '—'),
+    T.input + fmtTokens(last.fresh) + '  ' + T.output + fmtTokens(last.output) + '  ' + T.cache + fmtTokens(last.cached),
+    T.context + ': ' + pct + '% (' + fmtTokens(tokens) + ' / ' + (win ? fmtTokens(win) : '—') + ')',
+    '⚒ ' + tools + T.tools + '  ·  ⏱ ' + fmtClock(Date.now() - startedAt),
+    'People first · amplified by technology · driving business impact · alantia.ai',
+  ].join('\n')
+}
+
 export function register(on, options) {
   const BRAND = String(options?.marca || 'Alantia').toUpperCase()
   const ACCENT = String(options?.acento || ALANTIA_TURQUOISE)
@@ -115,7 +135,9 @@ export function register(on, options) {
   // 2) /consumo abre el panel
   on('command.run', { command: 'consumo' }, async ($) => {
     await refresh($)
-    await $.ui.open({ id: PANE, title: T.title, closeOnEscape: true, columns: PANE_COLUMNS })
+    const opened = await $.ui.open({ id: PANE, title: T.title, closeOnEscape: true, columns: PANE_COLUMNS })
+    // Si esta pantalla no puede acomodar el panel, las cifras salen como texto en el chat
+    if (!opened?.isPlaced) return { text: summary(T) }
     return {}
   })
 
