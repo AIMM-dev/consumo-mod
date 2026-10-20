@@ -1,20 +1,30 @@
 {
   "name": "consumo",
-  "version": "0.2.0",
-  "description": "Panel lateral de consumo: tokens del último pedido, gasto de la sesión, contexto, herramientas y tiempo",
-  "author": { "name": "Antonio" },
+  "version": "0.3.0",
+  "description": "AI Tokenomics in your terminal: a live side panel with tokens per request, session spend, context, tools and time. By Alantia.",
+  "author": { "name": "Alantia Consulting Group", "url": "https://alantia.ai" },
+  "homepage": "https://alantia.ai",
+  "license": "MIT",
+  "keywords": ["tokenomics", "usage", "cost", "context", "alantia"],
   "userConfig": {
     "marca": {
       "type": "string",
-      "title": "Marca",
-      "description": "Nombre que encabeza el panel",
+      "title": "Marca / Brand",
+      "description": "Nombre que encabeza el panel · Name shown at the top of the panel",
       "default": "Alantia"
     },
     "acento": {
       "type": "string",
-      "title": "Color de acento",
-      "description": "Color de la marca y los realces, en hex (#D97757) o nombre de color del tema",
-      "default": "#D97757"
+      "title": "Color de acento / Accent color",
+      "description": "Color de la marca y los realces, en hex o nombre de color del tema · Brand accent, hex or theme color name",
+      "default": "#1AD3E6"
+    },
+    "idioma": {
+      "type": "string",
+      "title": "Idioma / Language",
+      "description": "Idioma del panel · Panel language",
+      "options": ["es", "en"],
+      "default": "es"
     }
   }
 }

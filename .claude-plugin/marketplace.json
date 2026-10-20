@@ -1,6 +1,6 @@
 {
   "name": "alantia",
-  "description": "Mods de Alantia para Claude Code",
-  "owner": { "name": "Antonio" },
+  "description": "Free Claude Code mods by Alantia, strategy and business transformation firm · Mods gratuitos de Alantia para Claude Code",
+  "owner": { "name": "Alantia Consulting Group", "url": "https://alantia.ai" },
   "plugins": [{ "name": "consumo", "source": "./" }]
 }

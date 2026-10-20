@@ -1,12 +1,56 @@
 // ─────────────────────────────────────────────────────────────
-// Mod "consumo": panel lateral con métricas de la sesión
+// Mod "consumo" by Alantia · AI Tokenomics en tu terminal
+// Panel lateral con métricas de la sesión de Claude Code
 // Abre con /consumo  ·  Esc lo cierra
-// La marca y el color de acento se cambian en /config
+// Marca, color de acento e idioma se cambian en /config
+// Funciona local: solo lee las cifras que Claude Code ya lleva de la sesión
+// y no envía nada a ningún lado.
 // ─────────────────────────────────────────────────────────────
 
 const PANE = 'consumo'
 const PANE_COLUMNS = 34 // ancho pedido para el panel acoplado
 const INNER = PANE_COLUMNS - 4 // ancho útil, descontando el marco del panel
+const ALANTIA_TURQUOISE = '#1AD3E6' // turquesa tecnológico del manual de marca
+
+// Textos del panel en español e inglés
+const COPY = {
+  es: {
+    command: 'Abre el panel de consumo de Alantia',
+    title: 'Consumo',
+    subtitle: 'AI Tokenomics · tu sesión',
+    live: 'en vivo',
+    newTokens: 'tokens nuevos',
+    lastRequest: 'último pedido',
+    spend: 'gasto',
+    session: 'sesión',
+    input: '↑ entrada ',
+    output: '↓ salida ',
+    cache: '⟳ caché releída ',
+    call: ' llamada',
+    calls: ' llamadas',
+    context: 'contexto',
+    free: ' libres',
+    tools: ' herramientas',
+  },
+  en: {
+    command: 'Open the Alantia usage panel',
+    title: 'Usage',
+    subtitle: 'AI Tokenomics · your session',
+    live: 'live',
+    newTokens: 'new tokens',
+    lastRequest: 'last request',
+    spend: 'spend',
+    session: 'session',
+    input: '↑ input ',
+    output: '↓ output ',
+    cache: '⟳ cache reread ',
+    call: ' call',
+    calls: ' calls',
+    context: 'context',
+    free: ' free',
+    tools: ' tools',
+  },
+}
 
 // Estado del panel (se reinicia si el mod se recarga)
 // Un "pedido" es el turno completo: todas las llamadas al modelo que hace
@@ -51,13 +95,14 @@ async function refresh($) {
 
 export function register(on, options) {
   const BRAND = String(options?.marca || 'Alantia').toUpperCase()
-  const ACCENT = String(options?.acento || '#D97757')
+  const ACCENT = String(options?.acento || ALANTIA_TURQUOISE)
+  const T = COPY[options?.idioma === 'en' ? 'en' : 'es']
 
   // 1) Al iniciar: registra /consumo y arranca el reloj de la sesión
   on('session.start', async ($, e, next) => {
     await $.command.register({
       name: 'consumo',
-      description: 'Abre el panel de consumo',
+      description: T.command,
       immediate: true, // se puede abrir mientras Claude trabaja
     })
     loadedAt = Date.now()
@@ -70,16 +115,17 @@ export function register(on, options) {
   // 2) /consumo abre el panel
   on('command.run', { command: 'consumo' }, async ($) => {
     await refresh($)
-    await $.ui.open({ id: PANE, title: 'Consumo', closeOnEscape: true, columns: PANE_COLUMNS })
+    await $.ui.open({ id: PANE, title: T.title, closeOnEscape: true, columns: PANE_COLUMNS })
     return {}
   })
 
   // 3) Cuenta herramientas (observa y deja pasar)
+  // Solo observa: si algo falla aquí, la herramienta sigue su curso
   on('tool.call', async ($, e, next) => {
     tools += 1
     $.ui.invalidate('ui.render')
     return next(e)
-  })
+  }).catch(($, e, next) => next(e))
 
   // 4) Nuevo pedido: reinicia el acumulador del turno
   on('turn.start', async ($, e, next) => {
@@ -140,20 +186,21 @@ export function register(on, options) {
       flexDirection: 'column',
       gap: 1,
       children: [
+        // Encabezado: la A que asciende del isotipo, la marca y el pulso en vivo
         Box({
           key: 'head',
           flexDirection: 'column',
           children: [
             row('brand', [
-              Text({ bold: true, color: ACCENT, children: ['◆ ' + BRAND] }),
+              Text({ bold: true, color: ACCENT, children: ['▲ ' + BRAND] }),
               Box({
                 flexDirection: 'row',
                 gap: 1,
-                children: [Text({ color: 'success', dimColor: !blink, children: ['●'] }), label('en vivo')],
+                children: [Text({ color: ACCENT, dimColor: !blink, children: ['●'] }), label(T.live)],
               }),
             ]),
-            label('  consumo de la sesión'),
-            Text({ color: ACCENT, dimColor: true, children: ['━'.repeat(INNER)] }),
+            label('  ' + T.subtitle),
+            Text({ color: ACCENT, children: ['━'.repeat(INNER)] }),
           ],
         }),
         Box({
@@ -161,21 +208,18 @@ export function register(on, options) {
           flexDirection: 'row',
           gap: 2,
           children: [
-            stat('tok', 'tokens nuevos', fmtTokens(last.fresh + last.output), 'último pedido'),
-            stat('usd', 'gasto', cost ? '$' + cost.usd.toFixed(2) : '—', 'sesión', ACCENT),
+            stat('tok', T.newTokens, fmtTokens(last.fresh + last.output), T.lastRequest),
+            stat('usd', T.spend, cost ? '$' + cost.usd.toFixed(2) : '—', T.session, ACCENT),
           ],
         }),
         Box({
           key: 'split',
           flexDirection: 'column',
           children: [
-            row('io', [
-              label('↑ entrada ' + fmtTokens(last.fresh)),
-              label('↓ salida ' + fmtTokens(last.output)),
-            ]),
+            row('io', [label(T.input + fmtTokens(last.fresh)), label(T.output + fmtTokens(last.output))]),
             row('cache', [
-              label('⟳ caché releída ' + fmtTokens(last.cached)),
-              label(last.calls + (last.calls === 1 ? ' llamada' : ' llamadas')),
+              label(T.cache + fmtTokens(last.cached)),
+              label(last.calls + (last.calls === 1 ? T.call : T.calls)),
             ]),
           ],
         }),
@@ -183,10 +227,10 @@ export function register(on, options) {
           key: 'ctx',
           flexDirection: 'column',
           borderStyle: 'round',
-          borderDimColor: true,
+          borderColor: ACCENT,
           paddingX: 1,
           children: [
-            row('ctxHead', [label('contexto'), Text({ bold: true, color: level, children: [pct + '%'] })]),
+            row('ctxHead', [label(T.context), Text({ bold: true, color: level, children: [pct + '%'] })]),
             Box({
               flexDirection: 'row',
               children: [
@@ -196,11 +240,24 @@ export function register(on, options) {
             }),
             row('ctxFoot', [
               label(fmtTokens(ctxTokens) + ' / ' + (ctxWindow ? fmtTokens(ctxWindow) : '—')),
-              label(ctxWindow ? fmtTokens(Math.max(0, ctxWindow - ctxTokens)) + ' libres' : ' '),
+              label(ctxWindow ? fmtTokens(Math.max(0, ctxWindow - ctxTokens)) + T.free : ' '),
             ]),
           ],
         }),
-        row('foot', [label('⚒ ' + tools + ' herramientas'), label('⏱ ' + fmtClock(Date.now() - startedAt))]),
+        row('foot', [label('⚒ ' + tools + T.tools), label('⏱ ' + fmtClock(Date.now() - startedAt))]),
+        // Firma: el lema de Alantia, completo, en inglés y en orden;
+        // la frase central en el acento, como en el manual de marca
+        Box({
+          key: 'sign',
+          flexDirection: 'column',
+          children: [
+            Text({ color: ACCENT, dimColor: true, children: ['─'.repeat(INNER)] }),
+            Text({ bold: true, children: ['People first ·'] }),
+            Text({ bold: true, color: ACCENT, children: ['amplified by technology ·'] }),
+            Text({ bold: true, children: ['driving business impact'] }),
+            label('alantia.ai'),
+          ],
+        }),
       ],
     })
   })
